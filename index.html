@@ -142,11 +142,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
     <div class="form-grid">
       <div class="form-row">
         <label>产品名称</label>
-        <input type="text" id="p-name" placeholder="例：百多邦消毒喷雾剂">
+        <input type="text" id="p-name" placeholder="例：XX消毒喷雾剂">
       </div>
       <div class="form-row">
         <label>品类</label>
-        <input type="text" id="p-category" placeholder="例：消毒/外用药">
+        <input type="text" id="p-category" placeholder="例：消毒/个护">
       </div>
       <div class="form-row full">
         <label>核心卖点 <span class="hint">（每行一条）</span></label>
@@ -159,7 +159,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
       <div class="form-row">
         <label>投放渠道</label>
         <select id="p-channel">
-          <option value="千川">千川</option>
+          <option value="投流">投流平台</option>
           <option value="抖音">抖音</option>
           <option value="小红书">小红书</option>
           <option value="快手">快手</option>
@@ -352,7 +352,7 @@ const TECHNIQUE_LIBRARY={
 const TECHNIQUE_LABELS={hook:'开头钩子',amplify:'痛点放大',product:'产品引入',trust:'信任背书',cta:'CTA收尾'};
 
 let state={
-  product:{name:'',category:'',sellingPoints:[],scenarios:'',channel:'千川',compliance:'non-otc'},
+  product:{name:'',category:'',sellingPoints:[],scenarios:'',channel:'',compliance:'non-otc'},
   pains:[],
   audiences:[],
   scripts:[],
@@ -719,7 +719,7 @@ function runComplianceCheck(modules){
   const fullText=getFullScriptText(modules);
   const issues=[];
 
-  // 千川非OTC合规检查
+  // 投流非OTC合规检查
   const bannedWords=[
     {word:'最好',type:'绝对化用语'},
     {word:'最强',type:'绝对化用语'},
