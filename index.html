@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>脚本生成工作台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f5f6fa;--card:#fff;--border:#e2e5ec;--text:#1a1d29;--text2:#6b7280;
+  --primary:#4f46e5;--primary-light:#eef2ff;--danger:#ef4444;--danger-light:#fef2f2;
+  --success:#10b981;--success-light:#ecfdf5;--warning:#f59e0b;--warning-light:#fffbeb;
+  --radius:12px;--shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+/* nav */
+.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:56px;gap:24px}
+.nav-brand{font-weight:700;font-size:16px;white-space:nowrap}
+.nav-links{display:flex;gap:4px;flex:1}
+.nav-link{padding:6px 14px;border-radius:8px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-link:hover{background:var(--primary-light);color:var(--primary)}
+.nav-link.active{background:var(--primary);color:#fff}
+/* layout */
+.container{max-width:1100px;margin:0 auto;padding:32px 24px 80px}
+.section{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:24px;scroll-margin-top:72px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.section-num{width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.section-title{font-size:17px;font-weight:700}
+.section-desc{font-size:13px;color:var(--text2);margin-left:auto}
+/* form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-row{display:flex;flex-direction:column;gap:6px}
+.form-row.full{grid-column:1/-1}
+.form-row label{font-size:13px;font-weight:600;color:var(--text2)}
+.form-row input,.form-row textarea,.form-row select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;transition:border-color .15s;background:#fff}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-row textarea{resize:vertical;min-height:60px}
+.form-row .hint{font-size:12px;color:var(--text2)}
+/* buttons */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#4338ca}
+.btn-secondary{background:var(--bg);color:var(--text)}
+.btn-secondary:hover{background:#e8e9ee}
+.btn-danger{background:transparent;color:var(--danger);padding:4px 10px}
+.btn-danger:hover{background:var(--danger-light)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#059669}
+.btn-sm{padding:5px 12px;font-size:12px}
+/* tags */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500}
+.tag-primary{background:var(--primary-light);color:var(--primary)}
+.tag-success{background:var(--success-light);color:var(--success)}
+.tag-warning{background:var(--warning-light);color:var(--warning)}
+.tag-danger{background:var(--danger-light);color:var(--danger)}
+/* table */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.data-table tr:last-child td{border-bottom:none}
+.data-table input,.data-table textarea,.data-table select{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:#fff}
+.data-table input:focus,.data-table textarea:focus,.data-table select:focus{outline:none;border-color:var(--primary)}
+.edit-row td{background:var(--primary-light)}
+/* cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.info-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:box-shadow .15s;position:relative}
+.info-card:hover{box-shadow:var(--shadow)}
+.info-card h4{font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.info-card .card-field{font-size:12px;color:var(--text2);margin-bottom:4px}
+.info-card .card-field span{color:var(--text);font-weight:500}
+.info-card .card-actions{display:flex;gap:6px;margin-top:12px}
+/* generator */
+.gen-layout{display:grid;grid-template-columns:300px 1fr;gap:24px}
+.gen-sidebar{background:var(--bg);border-radius:var(--radius);padding:20px}
+.gen-sidebar h4{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.select-group{margin-bottom:16px}
+.select-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:4px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;transition:all .15s;background:#fff}
+.checkbox-item:hover{border-color:var(--primary)}
+.checkbox-item.active{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.module-output{background:var(--bg);border-radius:8px;padding:14px;margin-bottom:12px}
+.module-output-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.module-output-title{font-size:13px;font-weight:600;color:var(--text2)}
+.module-output textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;background:#fff}
+.module-output textarea:focus{outline:none;border-color:var(--primary)}
+/* compliance */
+.compliance-box{border-radius:8px;padding:12px 16px;margin-top:16px;font-size:13px}
+.compliance-ok{background:var(--success-light);color:var(--success)}
+.compliance-warn{background:var(--warning-light);color:var(--warning)}
+.compliance-list{margin:6px 0 0 0;padding-left:18px}
+.compliance-list li{margin-bottom:2px}
+/* script list */
+.script-item{border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:box-shadow .15s}
+.script-item:hover{box-shadow:var(--shadow)}
+.script-item-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.script-item-title{font-weight:700;font-size:15px;margin-right:auto}
+.script-body{background:var(--bg);border-radius:8px;padding:16px;font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.script-actions{display:flex;gap:8px;margin-top:12px}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text2)}
+.empty-state .icon{font-size:36px;margin-bottom:8px}
+/* modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .2s}
+.modal-overlay.show{opacity:1;visibility:visible}
+.modal{background:#fff;border-radius:var(--radius);padding:28px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;transform:scale(.95);transition:transform .2s}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal h3{font-size:17px;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:300;opacity:0;transform:translateY(10px);transition:all .2s}
+.toast.show{opacity:1;transform:translateY(0)}
+/* responsive */
+@media(max-width:768px){
+  .form-grid{grid-template-columns:1fr}
+  .gen-layout{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">脚本生成工作台</div>
+  <div class="nav-links">
+    <a class="nav-link" data-target="sec-product">产品配置</a>
+    <a class="nav-link" data-target="sec-pain">痛点库</a>
+    <a class="nav-link" data-target="sec-audience">人群画像</a>
+    <a class="nav-link" data-target="sec-generator">脚本生成</a>
+    <a class="nav-link" data-target="sec-scripts">脚本列表</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ====== 区块一：产品配置 ====== -->
+  <div class="section" id="sec-product">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">产品配置</div>
+      <div class="section-desc">配置后全局生效，所有脚本自动引用</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>产品名称</label>
+        <input type="text" id="p-name" placeholder="例：百多邦消毒喷雾剂">
+      </div>
+      <div class="form-row">
+        <label>品类</label>
+        <input type="text" id="p-category" placeholder="例：消毒/外用药">
+      </div>
+      <div class="form-row full">
+        <label>核心卖点 <span class="hint">（每行一条）</span></label>
+        <textarea id="p-selling-points" rows="4" placeholder="例：&#10;杀菌率99.9%&#10;喷雾设计，免涂抹&#10;便携小巧"></textarea>
+      </div>
+      <div class="form-row full">
+        <label>使用场景</label>
+        <input type="text" id="p-scenarios" placeholder="例：日常防护、外出、办公、伤口处理">
+      </div>
+      <div class="form-row">
+        <label>投放渠道</label>
+        <select id="p-channel">
+          <option value="千川">千川</option>
+          <option value="抖音">抖音</option>
+          <option value="小红书">小红书</option>
+          <option value="快手">快手</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>合规模式</label>
+        <select id="p-compliance">
+          <option value="non-otc">非OTC（普通商品）</option>
+          <option value="otc">OTC（药品）</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="saveProduct()">保存配置</button>
+      <button class="btn btn-secondary" onclick="loadProduct()">读取已保存</button>
+    </div>
+  </div>
+
+  <!-- ====== 区块二：痛点库 ====== -->
+  <div class="section" id="sec-pain">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">痛点库管理</div>
+      <div class="section-desc">每条痛点 = 场景 + 后果 + 情绪词 + 产品解法</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="pain-table">
+        <thead>
+          <tr>
+            <th style="width:120px">痛点名称</th>
+            <th style="width:180px">触发场景</th>
+            <th style="width:180px">连锁后果</th>
+            <th style="width:120px">情绪触发词</th>
+            <th style="width:160px">对应卖点</th>
+            <th style="width:80px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="pain-tbody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="addPainRow()">+ 添加痛点</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadPainTemplates()">载入通用模板</button>
+    </div>
+  </div>
+
+  <!-- ====== 区块三：人群画像 ====== -->
+  <div class="section" id="sec-audience">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">人群画像管理</div>
+      <div class="section-desc">定义目标人群的行为、痛点关联和信任驱动</div>
+    </div>
+    <div class="card-grid" id="audience-grid"></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="showAudienceModal()">+ 添加人群</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadAudienceTemplates()">载入通用模板</button>
+    </div>
+  </div>
+
+  <!-- ====== 区块四：脚本生成工作台 ====== -->
+  <div class="section" id="sec-generator">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">脚本生成工作台</div>
+      <div class="section-desc">选痛点 + 选人群 + 选手法 → 一键生成</div>
+    </div>
+    <div class="gen-layout">
+      <div class="gen-sidebar">
+        <h4>选择痛点</h4>
+        <div class="select-group">
+          <select id="gen-pain" class="form-row" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+            <option value="">请先在痛点库添加...</option>
+          </select>
+        </div>
+        <h4>选择人群</h4>
+        <div class="select-group">
+          <select id="gen-audience" class="form-row" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+            <option value="">请先在人群画像添加...</option>
+          </select>
+        </div>
+        <h4>选择手法组合</h4>
+        <div id="technique-list"></div>
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="generateScript()">一键生成脚本</button>
+        </div>
+      </div>
+      <div class="gen-main">
+        <div id="module-outputs">
+          <div class="empty-state">
+            <div class="icon">📝</div>
+            <div>选择痛点和人群后，点击「一键生成脚本」</div>
+          </div>
+        </div>
+        <div id="compliance-result"></div>
+        <div id="gen-actions" style="display:none;margin-top:16px;display:flex;gap:8px">
+          <button class="btn btn-success" onclick="saveScript()">保存到脚本列表</button>
+          <button class="btn btn-secondary" onclick="copyGeneratedScript()">复制全文</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 区块五：脚本列表 ====== -->
+  <div class="section" id="sec-scripts">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">脚本列表与导出</div>
+      <div class="section-desc">查看、编辑、复制、导出已生成的脚本</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-secondary btn-sm" onclick="exportAllTxt()">批量导出TXT</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAllScripts()">清空全部</button>
+    </div>
+    <div id="script-list"></div>
+  </div>
+
+</div>
+
+<!-- ====== 人群编辑弹窗 ====== -->
+<div class="modal-overlay" id="audience-modal">
+  <div class="modal">
+    <h3 id="audience-modal-title">添加人群</h3>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>人群标签</label>
+        <input type="text" id="a-label" placeholder="例：宝妈群体">
+      </div>
+      <div class="form-row">
+        <label>语言风格</label>
+        <select id="a-style">
+          <option value="口语化">口语化</option>
+          <option value="专业向">专业向</option>
+          <option value="情感向">情感向</option>
+        </select>
+      </div>
+      <div class="form-row full">
+        <label>行为特征</label>
+        <textarea id="a-behavior" rows="2" placeholder="例：关注孩子健康，常用消毒产品"></textarea>
+      </div>
+      <div class="form-row full">
+        <label>痛点相关度 <span class="hint">（勾选关联的痛点）</span></label>
+        <div id="a-pain-links" class="checkbox-group"></div>
+      </div>
+      <div class="form-row full">
+        <label>信任驱动</label>
+        <input type="text" id="a-trust" placeholder="例：专家推荐、成分安全、销量背书">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAudienceModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveAudience()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== 数据层 ==================== */
+const STORAGE_KEY='script_gen_data_v1';
+const TECHNIQUE_LIBRARY={
+  hook:[
+    {id:'hook_scence',name:'场景化痛点链',desc:'具体场景+连锁后果，制造代入感'},
+    {id:'hook_warning',name:'警示科普法',desc:'先指出错误做法，放大后果，再给方案'},
+    {id:'hook_emotion',name:'情感切入法',desc:'从情感需求切入，不直接卖产品'},
+  ],
+  amplify:[
+    {id:'amp_negative',name:'反面描述法',desc:'从反面建立价值，"免去麻烦""不怕…"'},
+    {id:'amp_number',name:'数字具象化',desc:'用具体数字代替形容词'},
+    {id:'amp_magnify',name:'痛点放大法',desc:'把问题说严重，用后果倒逼行动'},
+  ],
+  product:[
+    {id:'prod_authority',name:'权威推荐语态',desc:'替消费者做决策，"闭眼入""直接选"'},
+    {id:'prod_compare',name:'对比锚点',desc:'vs普通方法的显性对比'},
+    {id:'prod_scene',name:'场景适配式',desc:'功能描述后锚定具体使用场景'},
+  ],
+  trust:[
+    {id:'trust_number',name:'数字化+体感化',desc:'数据背书+体感描述，理性与感性并行'},
+    {id:'trust_exclude',name:'负面排除式',desc:'用排除顾虑的方式建立安心感'},
+    {id:'trust_authority',name:'权威数据',desc:'权威机构/检测报告/销量数据'},
+  ],
+  cta:[
+    {id:'cta_service',name:'服务式收尾',desc:'帮自己一把/缓一缓/有备无患'},
+    {id:'cta_scene',name:'场景适配收尾',desc:'锚定具体场景的收尾'},
+    {id:'cta_peace',name:'有备无患式',desc:'买来备着，用时不慌'},
+  ],
+};
+const TECHNIQUE_LABELS={hook:'开头钩子',amplify:'痛点放大',product:'产品引入',trust:'信任背书',cta:'CTA收尾'};
+
+let state={
+  product:{name:'',category:'',sellingPoints:[],scenarios:'',channel:'千川',compliance:'non-otc'},
+  pains:[],
+  audiences:[],
+  scripts:[],
+  currentGenerated:null,
+  editingAudienceIdx:-1,
+};
+
+function loadState(){
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(raw){try{const d=JSON.parse(raw);state={...state,...d};}catch(e){}}
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+}
+
+/* ==================== Toast ==================== */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+/* ==================== 产品配置 ==================== */
+function saveProduct(){
+  state.product={
+    name:val('p-name'),category:val('p-category'),
+    sellingPoints:val('p-selling-points').split('\n').filter(s=>s.trim()),
+    scenarios:val('p-scenarios'),channel:val('p-channel'),compliance:val('p-compliance'),
+  };
+  saveState();toast('产品配置已保存');
+}
+function loadProduct(){
+  setVal('p-name',state.product.name);
+  setVal('p-category',state.product.category);
+  setVal('p-selling-points',(state.product.sellingPoints||[]).join('\n'));
+  setVal('p-scenarios',state.product.scenarios);
+  setVal('p-channel',state.product.channel);
+  setVal('p-compliance',state.product.compliance);
+  toast('已读取配置');
+}
+
+/* ==================== 痛点库 ==================== */
+const PAIN_TEMPLATES=[
+  {name:'使用不便',scene:'每次用都要洗手涂抹，步骤繁琐',consequence:'出门在外根本不方便坚持',emotion:'嫌麻烦',sellingPoint:'喷雾设计，免涂抹'},
+  {name:'效果不明显',scene:'用了很多产品，该有的问题还是有',consequence:'反复花钱却看不到变化',emotion:'失望',sellingPoint:'杀菌率99.9%'},
+  {name:'担心安全性',scene:'成分不明，怕刺激皮肤',consequence:'用了反而更不舒服',emotion:'不放心',sellingPoint:'温和配方，不刺激'},
+  {name:'携带不方便',scene:'瓶瓶罐罐太大，包里放不下',consequence:'出门只能忍着不用',emotion:'纠结',sellingPoint:'便携小巧'},
+];
+function renderPainTable(){
+  const tb=document.getElementById('pain-tbody');
+  tb.innerHTML='';
+  state.pains.forEach((p,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input value="${esc(p.name)}" onchange="updatePain(${i},'name',this.value)"></td>
+      <td><input value="${esc(p.scene)}" onchange="updatePain(${i},'scene',this.value)"></td>
+      <td><input value="${esc(p.consequence)}" onchange="updatePain(${i},'consequence',this.value)"></td>
+      <td><input value="${esc(p.emotion)}" onchange="updatePain(${i},'emotion',this.value)"></td>
+      <td><input value="${esc(p.sellingPoint)}" onchange="updatePain(${i},'sellingPoint',this.value)"></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletePain(${i})">删除</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function addPainRow(){
+  state.pains.push({name:'',scene:'',consequence:'',emotion:'',sellingPoint:''});
+  saveState();renderPainTable();
+  const tb=document.getElementById('pain-tbody');
+  const lastRow=tb.lastElementChild;
+  if(lastRow){lastRow.scrollIntoView({behavior:'smooth',block:'center'});lastRow.querySelectorAll('input')[0].focus();}
+}
+function updatePain(i,field,v){state.pains[i][field]=v;saveState();}
+function deletePain(i){state.pains.splice(i,1);saveState();renderPainTable();refreshGenSelects();}
+function loadPainTemplates(){
+  PAIN_TEMPLATES.forEach(t=>{if(!state.pains.some(p=>p.name===t.name))state.pains.push({...t});});
+  saveState();renderPainTable();refreshGenSelects();toast('痛点模板已载入');
+}
+
+/* ==================== 人群画像 ==================== */
+const AUDIENCE_TEMPLATES=[
+  {label:'宝妈群体',behavior:'关注孩子健康，常用消毒/护理产品',painLinks:[],trust:'专家推荐、成分安全',style:'情感向'},
+  {label:'年轻上班族',behavior:'生活节奏快，追求效率，经常加班',painLinks:[],trust:'成分透明、使用便捷',style:'口语化'},
+  {label:'户外运动爱好者',behavior:'经常户外活动，容易受伤',painLinks:[],trust:'专业认证、便携实用',style:'专业向'},
+];
+function renderAudienceCards(){
+  const grid=document.getElementById('audience-grid');
+  grid.innerHTML='';
+  if(state.audiences.length===0){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">👥</div><div>点击「添加人群」或载入模板开始</div></div>';
+    return;
+  }
+  state.audiences.forEach((a,i)=>{
+    const painNames=(a.painLinks||[]).map(idx=>state.pains[idx]?.name).filter(Boolean).join('、')||'未关联';
+    const card=document.createElement('div');
+    card.className='info-card';
+    card.innerHTML=`<h4>${esc(a.label)} <span class="tag tag-primary">${esc(a.style)}</span></h4>
+      <div class="card-field">行为特征：<span>${esc(a.behavior)}</span></div>
+      <div class="card-field">关联痛点：<span>${esc(painNames)}</span></div>
+      <div class="card-field">信任驱动：<span>${esc(a.trust)}</span></div>
+      <div class="card-actions">
+        <button class="btn btn-secondary btn-sm" onclick="showAudienceModal(${i})">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAudience(${i})">删除</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+function showAudienceModal(idx){
+  state.editingAudienceIdx=idx===undefined?-1:idx;
+  const modal=document.getElementById('audience-modal');
+  document.getElementById('audience-modal-title').textContent=idx===undefined?'添加人群':'编辑人群';
+  // render pain checkboxes
+  const box=document.getElementById('a-pain-links');
+  box.innerHTML='';
+  if(state.pains.length===0){
+    box.innerHTML='<span style="color:var(--text2);font-size:12px">请先在痛点库添加痛点</span>';
+  }else{
+    state.pains.forEach((p,i)=>{
+      const el=document.createElement('label');
+      el.className='checkbox-item';
+      el.innerHTML=`<input type="checkbox" value="${i}" style="width:auto;margin:0"> ${esc(p.name)}`;
+      box.appendChild(el);
+    });
+  }
+  if(idx!==undefined){
+    const a=state.audiences[idx];
+    setVal('a-label',a.label);setVal('a-behavior',a.behavior);
+    setVal('a-trust',a.trust);setVal('a-style',a.style);
+    (a.painLinks||[]).forEach(pi=>{
+      const cb=box.querySelector(`input[value="${pi}"]`);
+      if(cb)cb.checked=true;
+    });
+  }else{
+    setVal('a-label','');setVal('a-behavior','');setVal('a-trust','');setVal('a-style','口语化');
+  }
+  // checkbox active state
+  box.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{cb.parentElement.classList.toggle('active',cb.checked);});
+  });
+  modal.classList.add('show');
+}
+function closeAudienceModal(){document.getElementById('audience-modal').classList.remove('show');}
+function saveAudience(){
+  const label=val('a-label').trim();
+  if(!label){toast('请填写人群标签');return;}
+  const painLinks=[];
+  document.querySelectorAll('#a-pain-links input:checked').forEach(cb=>painLinks.push(parseInt(cb.value)));
+  const data={label,behavior:val('a-behavior'),trust:val('a-trust'),style:val('a-style'),painLinks};
+  if(state.editingAudienceIdx>=0){
+    state.audiences[state.editingAudienceIdx]=data;
+  }else{
+    state.audiences.push(data);
+  }
+  saveState();renderAudienceCards();refreshGenSelects();closeAudienceModal();toast('人群已保存');
+}
+function deleteAudience(i){state.audiences.splice(i,1);saveState();renderAudienceCards();refreshGenSelects();}
+function loadAudienceTemplates(){
+  AUDIENCE_TEMPLATES.forEach(t=>{
+    if(!state.audiences.some(a=>a.label===t.label)){
+      const data={...t,painLinks:[]};
+      state.audiences.push(data);
+    }
+  });
+  saveState();renderAudienceCards();refreshGenSelects();toast('人群模板已载入');
+}
+
+/* ==================== 手法库 ==================== */
+function renderTechniques(){
+  const container=document.getElementById('technique-list');
+  container.innerHTML='';
+  Object.keys(TECHNIQUE_LIBRARY).forEach(cat=>{
+    const group=document.createElement('div');
+    group.style.marginBottom='12px';
+    group.innerHTML=`<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px">${TECHNIQUE_LABELS[cat]}</div>`;
+    TECHNIQUE_LIBRARY[cat].forEach(t=>{
+      const item=document.createElement('div');
+      item.className='checkbox-item';
+      item.dataset.id=t.id;
+      item.title=t.desc;
+      item.innerHTML=`${t.name}`;
+      item.addEventListener('click',()=>{
+        item.classList.toggle('active');
+      });
+      group.appendChild(item);
+    });
+    container.appendChild(group);
+  });
+}
+function getSelectedTechniques(){
+  const result={};
+  Object.keys(TECHNIQUE_LIBRARY).forEach(cat=>{
+    result[cat]=[];
+    document.querySelectorAll(`#technique-list .checkbox-item.active`).forEach(el=>{
+      const t=TECHNIQUE_LIBRARY[cat].find(x=>x.id===el.dataset.id);
+      if(t)result[cat].push(t);
+    });
+  });
+  return result;
+}
+
+/* ==================== 生成脚本 ==================== */
+function refreshGenSelects(){
+  const painSel=document.getElementById('gen-pain');
+  const audSel=document.getElementById('gen-audience');
+  painSel.innerHTML=state.pains.length?'<option value="">选择痛点...</option>':'<option value="">请先在痛点库添加...</option>';
+  state.pains.forEach((p,i)=>{painSel.innerHTML+=`<option value="${i}">${esc(p.name)}</option>`;});
+  audSel.innerHTML=state.audiences.length?'<option value="">选择人群...</option>':'<option value="">请先在人群画像添加...</option>';
+  state.audiences.forEach((a,i)=>{audSel.innerHTML+=`<option value="${i}">${esc(a.label)}</option>`;});
+}
+
+function generateScript(){
+  const painIdx=parseInt(val('gen-pain'));
+  const audIdx=parseInt(val('gen-audience'));
+  if(isNaN(painIdx)){toast('请选择痛点');return;}
+  if(isNaN(audIdx)){toast('请选择人群');return;}
+  const pain=state.pains[painIdx];
+  const audience=state.audiences[audIdx];
+  const product=state.product;
+  if(!product.name){toast('请先在产品配置填写产品名称');scrollToSection('sec-product');return;}
+
+  const techs=getSelectedTechniques();
+  const modules=generateModules(pain,audience,product,techs);
+
+  state.currentGenerated={
+    painIdx,audIdx,painName:pain.name,audienceName:audience.label,
+    techniques:techs,modules,timestamp:Date.now(),
+  };
+
+  renderModuleOutputs(modules);
+  runComplianceCheck(modules);
+  document.getElementById('gen-actions').style.display='flex';
+  toast('脚本已生成，可逐模块编辑微调');
+}
+
+function generateModules(pain,audience,product,techs){
+  const sp=product.sellingPoints||[];
+  const spStr=sp.length?sp.join('；'):'';
+  const spMain=sp[0]||'核心卖点';
+  const spMap=pain.sellingPoint||spMain;
+
+  const style=audience.style||'口语化';
+  const trustDrv=audience.trust||'';
+  const scene=product.scenarios||'';
+
+  // hook
+  let hook='';
+  const hookTech=techs.hook[0];
+  if(hookTech){
+    if(hookTech.id==='hook_scence'){
+      hook=`${pain.scene}，结果${pain.consequence}，真的让人${pain.emotion}。`;
+    }else if(hookTech.id==='hook_warning'){
+      hook=`很多人遇到${pain.scene}，第一反应是忍着或者随便处理，但你知道吗？${pain.consequence}，到时候再后悔就晚了。`;
+    }else if(hookTech.id==='hook_emotion'){
+      hook=`每次看到${pain.scene}，心里就特别不是滋味。${pain.consequence}，这种${pain.emotion}的感觉，谁体验过谁知道。`;
+    }
+  }else{
+    hook=`${pain.scene}，结果${pain.consequence}，真的让人${pain.emotion}。`;
+  }
+
+  // amplify
+  let amplify='';
+  const ampTech=techs.amplify[0];
+  if(ampTech){
+    if(ampTech.id==='amp_negative'){
+      amplify=`其实你不用一直忍受这种${pain.emotion}。${pain.consequence}，这不仅仅是${pain.emotion}的问题，长期下去只会越来越严重。`;
+    }else if(ampTech.id==='amp_number'){
+      amplify=`你知道吗？${pain.consequence}，这意味着你可能在不知不觉中浪费了大量时间和精力，问题却始终没有解决。`;
+    }else if(ampTech.id==='amp_magnify'){
+      amplify=`别小看这个问题。${pain.consequence}，一旦严重起来，影响的可不只是当下，后续处理起来更麻烦、更费钱。`;
+    }
+  }else{
+    amplify=`${pain.consequence}，这个问题真的不能继续忽视了。`;
+  }
+
+  // product
+  let productIntro='';
+  const prodTech=techs.product[0];
+  if(prodTech){
+    if(prodTech.id==='prod_authority'){
+      productIntro=`所以直接选${product.name}。${spMap}，${spMain}，不需要纠结，用它就对了。`;
+    }else if(prodTech.id==='prod_compare'){
+      productIntro=`比起普通方法，${product.name}的优势很明显：${spMap}。${spStr?spStr+'。':''}不一样的地方就在这里。`;
+    }else if(prodTech.id==='prod_scene'){
+      productIntro=`${product.name}，${spMap}。${scene?'特别适合'+scene+'的时候用。':''}不管什么时候需要，拿出来就能用。`;
+    }
+  }else{
+    productIntro=`${product.name}，${spMap}，${spStr}`;
+  }
+
+  // trust
+  let trust='';
+  const trustTech=techs.trust[0];
+  if(trustTech){
+    if(trustTech.id==='trust_number'){
+      trust=`${trustDrv?trustDrv+'，':''}${spMain}，不是说说而已，每一项都有实打实的数据支撑，用起来心里有底。`;
+    }else if(trustTech.id==='trust_exclude'){
+      trust=`不用担心理刺激性，不用怕成分不安全，${trustDrv?trustDrv+'，':''}${product.name}把你能顾虑到的都考虑到了。`;
+    }else if(trustTech.id==='trust_authority'){
+      trust=`${trustDrv?trustDrv+'。':''}${product.name}，品质有保障，用着才放心。`;
+    }
+  }else{
+    trust=`${trustDrv?trustDrv+'。':''}品质靠谱，放心用。`;
+  }
+
+  // cta
+  let cta='';
+  const ctaTech=techs.cta[0];
+  if(ctaTech){
+    if(ctaTech.id==='cta_service'){
+      cta=state.product.compliance==='otc'
+        ?`如果也有类似的困扰，不妨帮自己一把，备一支${product.name}，需要的时候不慌。请按药品说明书或在药师指导下购买和使用。`
+        :`如果也有类似的困扰，不妨帮自己一把，备一支${product.name}，需要的时候不慌。`;
+    }else if(ctaTech.id==='cta_scene'){
+      cta=state.product.compliance==='otc'
+        ?`${scene?scene+'的时候':''}，有${product.name}在身边更安心。趁现在安排上，用时不用手忙脚乱。请按药品说明书或在药师指导下购买和使用。`
+        :`${scene?scene+'的时候':''}，有${product.name}在身边更安心。趁现在安排上，用时不用手忙脚乱。`;
+    }else if(ctaTech.id==='cta_peace'){
+      cta=state.product.compliance==='otc'
+        ?`买来备着，用时不慌。${product.name}，居家出行都值得备一份。请按药品说明书或在药师指导下购买和使用。`
+        :`买来备着，用时不慌。${product.name}，居家出行都值得备一份。`;
+    }
+  }else{
+    cta=state.product.compliance==='otc'
+      ?`有备无患，${product.name}值得备一份。请按药品说明书或在药师指导下购买和使用。`
+      :`有备无患，${product.name}值得备一份。`;
+  }
+
+  return [
+    {key:'hook',label:'开头钩子',content:hook},
+    {key:'amplify',label:'痛点放大',content:amplify},
+    {key:'product',label:'产品引入',content:productIntro},
+    {key:'trust',label:'信任背书',content:trust},
+    {key:'cta',label:'CTA收尾',content:cta},
+  ];
+}
+
+function renderModuleOutputs(modules){
+  const container=document.getElementById('module-outputs');
+  container.innerHTML='';
+  modules.forEach((m,i)=>{
+    const div=document.createElement('div');
+    div.className='module-output';
+    div.innerHTML=`<div class="module-output-header">
+      <span class="module-output-title">${i+1}. ${m.label}</span>
+      <span class="tag tag-primary">${m.content.length}字</span>
+    </div>
+    <textarea data-module-idx="${i}" rows="3">${esc(m.content)}</textarea>`;
+    container.appendChild(div);
+  });
+}
+
+function getEditedModules(){
+  const texts=document.querySelectorAll('#module-outputs textarea[data-module-idx]');
+  const modules=[...state.currentGenerated.modules];
+  texts.forEach(t=>{
+    const idx=parseInt(t.dataset.moduleIdx);
+    if(modules[idx])modules[idx].content=t.value;
+  });
+  return modules;
+}
+
+function getFullScriptText(modules){
+  return modules.map(m=>m.content).join('\n\n');
+}
+
+function runComplianceCheck(modules){
+  const fullText=getFullScriptText(modules);
+  const issues=[];
+
+  // 千川非OTC合规检查
+  const bannedWords=[
+    {word:'最好',type:'绝对化用语'},
+    {word:'最强',type:'绝对化用语'},
+    {word:'第一',type:'绝对化用语'},
+    {word:'唯一',type:'绝对化用语'},
+    {word:'顶级',type:'绝对化用语'},
+    {word:'永久',type:'绝对化用语'},
+    {word:'100%治愈',type:'功效承诺'},
+    {word:'包治',type:'功效承诺'},
+    {word:'根治',type:'功效承诺'},
+    {word:'药到病除',type:'功效承诺'},
+    {word:'闭眼入',type:'强推CTA'},
+    {word:'赶紧抢',type:'强推CTA'},
+    {word:'不买后悔',type:'强推CTA'},
+    {word:'强效',type:'主观强度词'},
+    {word:'高效',type:'主观强度词'},
+    {word:'显著',type:'主观强度词'},
+    {word:'立刻见效',type:'功效承诺'},
+    {word:'马上好',type:'功效承诺'},
+  ];
+
+  bannedWords.forEach(b=>{
+    if(fullText.includes(b.word)){
+      issues.push({word:b.word,type:b.type});
+    }
+  });
+
+  // OTC检查：是否包含合规尾巴
+  if(state.product.compliance==='otc'){
+    const hasTail=fullText.includes('请按药品说明书或在药师指导下购买和使用');
+    if(!hasTail){
+      issues.push({word:'(缺少OTC合规尾巴)',type:'OTC合规'});
+    }
+  }
+
+  const box=document.getElementById('compliance-result');
+  if(issues.length===0){
+    box.innerHTML=`<div class="compliance-box compliance-ok">
+      <strong>合规检查通过</strong> — 未发现违规内容
+    </div>`;
+  }else{
+    const typeMap={};
+    issues.forEach(i=>{
+      if(!typeMap[i.type])typeMap[i.type]=[];
+      typeMap[i.type].push(i.word);
+    });
+    let html=`<div class="compliance-box compliance-warn">
+      <strong>合规检查发现 ${issues.length} 处风险</strong>
+      <ul class="compliance-list">`;
+    Object.keys(typeMap).forEach(t=>{
+      html+=`<li><span class="tag tag-danger">${t}</span> ${typeMap[t].map(w=>`「${esc(w)}」`).join('、')}</li>`;
+    });
+    html+=`</ul></div>`;
+    box.innerHTML=html;
+  }
+}
+
+/* ==================== 保存/复制脚本 ==================== */
+function saveScript(){
+  if(!state.currentGenerated){toast('请先生成脚本');return;}
+  const modules=getEditedModules();
+  const fullText=getFullScriptText(modules);
+  const techNames=[];
+  Object.keys(state.currentGenerated.techniques).forEach(cat=>{
+    state.currentGenerated.techniques[cat].forEach(t=>techNames.push(t.name));
+  });
+
+  const script={
+    id:Date.now(),
+    painName:state.currentGenerated.painName,
+    audienceName:state.currentGenerated.audienceName,
+    techniques:techNames,
+    modules:modules,
+    fullText:fullText,
+    timestamp:Date.now(),
+  };
+
+  // 如果是编辑已有脚本则更新
+  const existingIdx=state.scripts.findIndex(s=>s.id===state.currentGenerated.editId);
+  if(existingIdx>=0){
+    script.id=state.currentGenerated.editId;
+    state.scripts[existingIdx]=script;
+    toast('脚本已更新');
+  }else{
+    state.scripts.push(script);
+    toast('脚本已保存');
+  }
+  saveState();
+  renderScriptList();
+}
+
+function copyGeneratedScript(){
+  if(!state.currentGenerated){toast('请先生成脚本');return;}
+  const modules=getEditedModules();
+  const text=getFullScriptText(modules);
+  navigator.clipboard.writeText(text).then(()=>toast('已复制到剪贴板')).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('已复制到剪贴板');
+  });
+}
+
+/* ==================== 脚本列表 ==================== */
+function renderScriptList(){
+  const container=document.getElementById('script-list');
+  if(state.scripts.length===0){
+    container.innerHTML='<div class="empty-state"><div class="icon">📄</div><div>还没有保存的脚本，去生成工作台创建第一条吧</div></div>';
+    return;
+  }
+  container.innerHTML='';
+  state.scripts.forEach((s,i)=>{
+    const date=new Date(s.timestamp);
+    const dateStr=`${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+    const item=document.createElement('div');
+    item.className='script-item';
+    item.innerHTML=`
+      <div class="script-item-header">
+        <span class="script-item-title">脚本 ${i+1}</span>
+        <span class="tag tag-primary">${esc(s.painName)}</span>
+        <span class="tag tag-success">${esc(s.audienceName)}</span>
+        <span class="tag tag-warning">${dateStr}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">
+        手法：${s.techniques.map(t=>esc(t)).join('、')}
+      </div>
+      <div class="script-body">${esc(s.fullText)}</div>
+      <div class="script-actions">
+        <button class="btn btn-secondary btn-sm" onclick="editScript(${s.id})">编辑</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyScript(${s.id})">复制</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteScript(${s.id})">删除</button>
+      </div>`;
+    container.appendChild(item);
+  });
+}
+
+function editScript(id){
+  const s=state.scripts.find(x=>x.id===id);
+  if(!s)return;
+  // load into generator
+  const painIdx=state.pains.findIndex(p=>p.name===s.painName);
+  const audIdx=state.audiences.findIndex(a=>a.label===s.audienceName);
+  if(painIdx>=0)document.getElementById('gen-pain').value=painIdx;
+  if(audIdx>=0)document.getElementById('gen-audience').value=audIdx;
+  state.currentGenerated={
+    painIdx,audIdx,painName:s.painName,audienceName:s.audienceName,
+    techniques:{},modules:s.modules,timestamp:s.timestamp,editId:id,
+  };
+  renderModuleOutputs(s.modules);
+  runComplianceCheck(s.modules);
+  document.getElementById('gen-actions').style.display='flex';
+  scrollToSection('sec-generator');
+  toast('已载入编辑，修改后点击「保存到脚本列表」更新');
+}
+
+function copyScript(id){
+  const s=state.scripts.find(x=>x.id===id);
+  if(!s)return;
+  navigator.clipboard.writeText(s.fullText).then(()=>toast('已复制到剪贴板')).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=s.fullText;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('已复制到剪贴板');
+  });
+}
+
+function deleteScript(id){
+  state.scripts=state.scripts.filter(s=>s.id!==id);
+  saveState();renderScriptList();toast('已删除');
+}
+
+function clearAllScripts(){
+  if(state.scripts.length===0){toast('没有可清空的脚本');return;}
+  if(confirm('确定清空全部脚本？此操作不可撤销。')){
+    state.scripts=[];saveState();renderScriptList();toast('已清空');
+  }
+}
+
+function exportAllTxt(){
+  if(state.scripts.length===0){toast('没有可导出的脚本');return;}
+  let text='';
+  state.scripts.forEach((s,i)=>{
+    text+=`========== 脚本 ${i+1} ==========\n`;
+    text+=`痛点：${s.painName} | 人群：${s.audienceName}\n`;
+    text+=`手法：${s.techniques.join('、')}\n\n`;
+    text+=s.fullText;
+    text+=`\n\n`;
+  });
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`脚本导出_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();URL.revokeObjectURL(url);
+  toast(`已导出 ${state.scripts.length} 条脚本`);
+}
+
+/* ==================== 工具函数 ==================== */
+function val(id){return document.getElementById(id).value;}
+function setVal(id,v){document.getElementById(id).value=v||'';}
+function esc(s){if(s===null||s===undefined)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function scrollToSection(id){
+  document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ==================== 导航高亮 ==================== */
+function setupNav(){
+  const links=document.querySelectorAll('.nav-link');
+  const sections=['sec-product','sec-pain','sec-audience','sec-generator','sec-scripts'];
+  links.forEach(l=>{
+    l.addEventListener('click',e=>{
+      e.preventDefault();
+      scrollToSection(l.dataset.target);
+    });
+  });
+  // scroll spy
+  window.addEventListener('scroll',()=>{
+    let active='';
+    sections.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        const rect=el.getBoundingClientRect();
+        if(rect.top<=100)active=id;
+      }
+    });
+    links.forEach(l=>{
+      l.classList.toggle('active',l.dataset.target===active);
+    });
+  });
+}
+
+/* ==================== 初始化 ==================== */
+function init(){
+  loadState();
+  loadProduct();
+  renderPainTable();
+  renderAudienceCards();
+  renderTechniques();
+  refreshGenSelects();
+  renderScriptList();
+  setupNav();
+  // close modal on overlay click
+  document.getElementById('audience-modal').addEventListener('click',e=>{
+    if(e.target===e.currentTarget)closeAudienceModal();
+  });
+}
+init();
+</script>
+
+<!-- AIGC: {"Label":"value1","ContentProducer":"001191110000802100433B11010001191110000802100433B11010","ProduceID":"b040b10e-068f-4012-8dc2-197e193b71f6","ReservedCode1":"72dafc97cd38b92e5f3d5cdfd0dfbbe6","ContentPropagator":"001191110000802100433B11010001191110000802100433B11010","PropagateID":"e1bc30be-11f6-43d2-a36d-716c267de45e","ReservedCode2":"2734827274df537123a472bf4de01eb5"} -->
+</body>
+</html>
