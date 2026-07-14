@@ -244,8 +244,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hira
         </div>
         <h4>选择手法组合</h4>
         <div id="technique-list"></div>
-        <div style="margin-top:16px">
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="generateScript()">一键生成脚本</button>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="generateScript()">模板生成</button>
+          <button class="btn btn-success" style="width:100%;justify-content:center" onclick="generateScriptAI()" id="ai-gen-btn">AI 智能生成</button>
         </div>
       </div>
       <div class="gen-main">
@@ -582,6 +583,84 @@ function generateScript(){
   runComplianceCheck(modules);
   document.getElementById('gen-actions').style.display='flex';
   toast('脚本已生成，可逐模块编辑微调');
+}
+
+/* ==================== AI 生成 ==================== */
+async function generateScriptAI(){
+  const painIdx=parseInt(val('gen-pain'));
+  const audIdx=parseInt(val('gen-audience'));
+  if(isNaN(painIdx)){toast('请选择痛点');return;}
+  if(isNaN(audIdx)){toast('请选择人群');return;}
+  const pain=state.pains[painIdx];
+  const audience=state.audiences[audIdx];
+  const product=state.product;
+  if(!product.name){toast('请先在产品配置填写产品名称');scrollToSection('sec-product');return;}
+
+  const techs=getSelectedTechniques();
+  const btn=document.getElementById('ai-gen-btn');
+  const originalText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent='AI 生成中...';
+  btn.style.opacity='0.6';
+
+  // Show loading state
+  document.getElementById('module-outputs').innerHTML='<div class="empty-state"><div class="icon">⏳</div><div>AI 正在生成脚本，请稍候...</div></div>';
+  document.getElementById('compliance-result').innerHTML='';
+  document.getElementById('gen-actions').style.display='none';
+
+  try{
+    const response=await fetch('/api/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        product:{
+          name:product.name,
+          category:product.category,
+          sellingPoints:product.sellingPoints||[],
+          scenarios:product.scenarios,
+          compliance:product.compliance,
+        },
+        pain:{
+          name:pain.name,
+          scene:pain.scene,
+          consequence:pain.consequence,
+          emotion:pain.emotion,
+          sellingPoint:pain.sellingPoint,
+        },
+        audience:{
+          label:audience.label,
+          behavior:audience.behavior,
+          trust:audience.trust,
+          style:audience.style,
+        },
+        techniques:techs,
+      }),
+    });
+
+    const data=await response.json();
+
+    if(!response.ok){
+      throw new Error(data.error||'AI 生成失败');
+    }
+
+    const modules=data.modules;
+    state.currentGenerated={
+      painIdx,audIdx,painName:pain.name,audienceName:audience.label,
+      techniques:techs,modules,timestamp:Date.now(),
+    };
+
+    renderModuleOutputs(modules);
+    runComplianceCheck(modules);
+    document.getElementById('gen-actions').style.display='flex';
+    toast('AI 脚本已生成，可逐模块编辑微调');
+  }catch(err){
+    document.getElementById('module-outputs').innerHTML=`<div class="empty-state"><div class="icon">⚠</div><div>AI 生成失败：${esc(err.message)}</div><div style="margin-top:8px;font-size:12px;color:var(--text2)">可使用「模板生成」作为备选方案</div></div>`;
+    toast('AI 生成失败，请重试或使用模板生成');
+  }finally{
+    btn.disabled=false;
+    btn.textContent=originalText;
+    btn.style.opacity='1';
+  }
 }
 
 function generateModules(pain,audience,product,techs){
