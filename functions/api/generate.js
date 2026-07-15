@@ -1,24 +1,31 @@
-const handler = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+// Cloudflare Pages Functions 格式
+// 文件位于 functions/api/generate.js，自动映射到 /api/generate
+
+export async function onRequestPost({ request, env }) {
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
-    const { product, pain, audience, techniques } = req.body;
+    const { product, pain, audience, techniques } = await request.json();
 
     if (!product || !product.name) {
-      return res.status(400).json({ error: '缺少产品信息' });
+      return jsonResponse(400, { error: '缺少产品信息' });
     }
     if (!pain || !pain.name) {
-      return res.status(400).json({ error: '缺少痛点信息' });
+      return jsonResponse(400, { error: '缺少痛点信息' });
     }
     if (!audience || !audience.label) {
-      return res.status(400).json({ error: '缺少人群信息' });
+      return jsonResponse(400, { error: '缺少人群信息' });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    // Cloudflare Pages 环境变量通过 env 获取
+    const apiKey = env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: '服务器未配置 DEEPSEEK_API_KEY 环境变量' });
+      return jsonResponse(500, { error: '服务器未配置 DEEPSEEK_API_KEY 环境变量' });
     }
 
     // Build technique descriptions
@@ -93,14 +100,14 @@ const handler = async (req, res) => {
     if (!response.ok) {
       const errText = await response.text();
       console.error('DeepSeek API error:', response.status, errText);
-      return res.status(502).json({ error: 'AI 服务返回错误 (' + response.status + ')' });
+      return jsonResponse(502, { error: 'AI 服务返回错误 (' + response.status + ')' });
     }
 
     const data = await response.json();
     const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
 
     if (!content) {
-      return res.status(502).json({ error: 'AI 未返回有效内容' });
+      return jsonResponse(502, { error: 'AI 未返回有效内容' });
     }
 
     // Parse JSON from AI response
@@ -115,14 +122,14 @@ const handler = async (req, res) => {
       if (match) {
         modules = JSON.parse(match[0]);
       } else {
-        return res.status(502).json({ error: 'AI 返回内容无法解析为 JSON', raw: content });
+        return jsonResponse(502, { error: 'AI 返回内容无法解析为 JSON', raw: content });
       }
     }
 
     const requiredKeys = ['hook', 'amplify', 'product', 'trust', 'cta'];
     for (const key of requiredKeys) {
       if (!modules[key] || typeof modules[key] !== 'string') {
-        return res.status(502).json({ error: 'AI 返回内容缺少模块: ' + key });
+        return jsonResponse(502, { error: 'AI 返回内容缺少模块: ' + key });
       }
     }
 
@@ -134,11 +141,16 @@ const handler = async (req, res) => {
       { key: 'cta', label: 'CTA收尾', content: modules.cta },
     ];
 
-    return res.status(200).json({ modules: result });
+    return jsonResponse(200, { modules: result });
   } catch (err) {
     console.error('Server error:', err);
-    return res.status(500).json({ error: '服务器内部错误: ' + (err.message || 'unknown') });
+    return jsonResponse(500, { error: '服务器内部错误: ' + (err.message || 'unknown') });
   }
-};
+}
 
-module.exports = handler;
+function jsonResponse(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
